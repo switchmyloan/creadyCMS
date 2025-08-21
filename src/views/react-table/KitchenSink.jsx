@@ -13,16 +13,17 @@ import {
   getFacetedMinMaxValues,
   getPaginationRowModel,
   getSortedRowModel,
-  flexRender,
-  createColumnHelper
+  flexRender
 } from '@tanstack/react-table'
 import { rankItem } from '@tanstack/match-sorter-utils'
+import Checkbox from '@mui/material/Checkbox'
 
 // Components
 import TablePaginationComponent from '@components/TablePaginationComponent'
 import CustomTextField from '@core/components/mui/TextField'
 import ChevronRight from '@menu/svg/ChevronRight'
 import styles from '@core/styles/table.module.css'
+import { Button } from '@mui/material'
 
 // ---- Debounced Input ----
 const DebouncedInput = ({ value: initialValue, onChange, debounce = 500, ...props }) => {
@@ -50,18 +51,44 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
 }
 
 // ---- Main Table Component ----
-const KitchenSink = ({ data = [], columns = [], title = 'Data Table' }) => {
+const KitchenSink = ({ data = [], columns = [], title = 'Data Table', btnText, btnFunc }) => {
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
+
+  // --- Checkbox Column ---
+  const selectionColumn = {
+    id: 'select',
+    header: ({ table }) => (
+     <Checkbox
+      checked={table.getIsAllRowsSelected()}
+      indeterminate={table.getIsSomeRowsSelected()}
+      onChange={table.getToggleAllRowsSelectedHandler()}
+      size="small"
+    />
+    ),
+    cell: ({ row }) => (
+        <Checkbox
+      checked={row.getIsSelected()}
+      disabled={!row.getCanSelect()}
+      indeterminate={row.getIsSomeSelected()}
+      onChange={row.getToggleSelectedHandler()}
+      size="small"
+    />
+    )
+  }
+
+  const memoizedColumns = useMemo(() => [selectionColumn, ...columns], [columns])
 
   const table = useReactTable({
-    data,
-    columns,
+    data: useMemo(() => data, [data]),
+    columns: memoizedColumns,
     filterFns: { fuzzy: fuzzyFilter },
-    state: { columnFilters, globalFilter },
+    state: { columnFilters, globalFilter, rowSelection },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: fuzzyFilter,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true, // enable selection
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -71,18 +98,38 @@ const KitchenSink = ({ data = [], columns = [], title = 'Data Table' }) => {
     getFacetedMinMaxValues: getFacetedMinMaxValues()
   })
 
+  // Access selected rows
+  const selectedRows = table.getSelectedRowModel().rows.map(r => r.original)
+
   return (
-    <Card>
+    <Card className='overflow-visible'>
       <CardHeader
         title={title}
         action={
-          <DebouncedInput
-            value={globalFilter ?? ''}
-            onChange={value => setGlobalFilter(String(value))}
-            placeholder='Search all columns...'
-          />
+          <div className="flex gap-x-2">
+            <DebouncedInput
+              value={globalFilter ?? ''}
+              onChange={value => setGlobalFilter(String(value))}
+              placeholder='Search all columns...'
+            />
+
+            {btnText && (
+              <Button
+                variant="contained"
+                className='flex gap-2 items-center'
+                color="primary"
+                onClick={btnFunc}
+                size='small'
+                sx={{ borderRadius: "25px", padding: "10px 30px" }}
+              >
+                <i className="tabler-plus h-5 w-5"></i>
+                <p className='text-sm'>{btnText}</p>
+              </Button>
+            )}
+          </div>
         }
       />
+
       <div className='overflow-x-auto'>
         <table className={styles.table}>
           <thead>
@@ -129,7 +176,15 @@ const KitchenSink = ({ data = [], columns = [], title = 'Data Table' }) => {
           </tbody>
         </table>
       </div>
+
       <TablePaginationComponent table={table} />
+
+      {/* Example: show selected rows */}
+      {/* {selectedRows.length > 0 && (
+        <div className="p-3 text-sm text-gray-600">
+          Selected Rows: {selectedRows.length}
+        </div>
+      )} */}
     </Card>
   )
 }

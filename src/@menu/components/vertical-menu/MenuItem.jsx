@@ -81,19 +81,47 @@ const MenuItem = (props, ref) => {
   }
 
   // Change active state when the url changes
+  // useEffect(() => {
+  //   const href = rest.href || (component && typeof component !== 'string' && component.props.href)
+
+  //   if (href) {
+  //     // Check if the current url matches any of the children urls
+  //     if (exactMatch ? pathname === href : activeUrl && pathname.includes(activeUrl)) {
+  //       setActive(true)
+  //     } else {
+  //       setActive(false)
+  //     }
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [pathname])
+
   useEffect(() => {
-    const href = rest.href || (component && typeof component !== 'string' && component.props.href)
+    const href = rest.href || (component && typeof component !== 'string' && component.props.href);
 
     if (href) {
-      // Check if the current url matches any of the children urls
-      if (exactMatch ? pathname === href : activeUrl && pathname.includes(activeUrl)) {
-        setActive(true)
-      } else {
-        setActive(false)
-      }
+      // Normalize the pathname and href by removing trailing slashes
+      const normalizedPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+      const normalizedHref = href.endsWith('/') ? href.slice(0, -1) : href;
+
+      // Decode URL in case there are encoded characters
+      const decodedPathname = decodeURIComponent(normalizedPathname);
+      const decodedHref = decodeURIComponent(normalizedHref);
+
+      // Convert both href and pathname to lowercase to ensure case-insensitive comparison
+      const pathnameToCompare = decodedPathname.toLowerCase();
+      const hrefToCompare = decodedHref.toLowerCase();
+
+      // Split both pathname and href at `/` to get the base path (e.g., "/countries" or "/genre")
+      const baseHref = hrefToCompare.split('/')[1];  // "/countries" -> "countries"
+      const basePathname = pathnameToCompare.split('/')[1];  // "/countries/create" -> "countries"
+
+      // Check if the base parts match, ignoring the trailing parts like "/create"
+      const isActive = basePathname === baseHref;
+
+      // Set active state if the current URL matches or contains the href
+      setActive(isActive);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [pathname, rest.href, component, exactMatch]);
 
   // Call the onActiveChange callback when the active state changes.
   useUpdateEffect(() => {

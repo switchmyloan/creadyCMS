@@ -1,3 +1,4 @@
+import { IconButton } from "@mui/material"
 
 
 export const blogColumns = ({ handleEdit, columnHelper, handleDelete }) => [
@@ -14,5 +15,25 @@ export const blogColumns = ({ handleEdit, columnHelper, handleDelete }) => [
     cell: info => info.getValue(),
     header: 'Date'
   }),
+{
+    header: 'Action',
+    cell: info => {
+      const rowData = info.row.original // Access the row's original data
+
+      return (
+        <>
+          
+            <IconButton>
+              <i className='tabler-pencil' onClick={() => handleEdit(rowData)} />
+            </IconButton>
+         
+            <IconButton>
+              <i className='tabler-trash' onClick={() => handleDelete(rowData)} />
+            </IconButton>
+         
+        </>
+      )
+    }
+  }
 
 ]
