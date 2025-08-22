@@ -58,13 +58,13 @@ const VerticalMenu = ({ scrollMenu }) => {
         <MenuItem href='/home' icon={<i className='tabler-smart-home' />}>
           Home
         </MenuItem>
-        <MenuItem href='/tags' icon={<i className='tabler-smart-home' />}>
+        {/* <MenuItem href='/tags' icon={<i className='tabler-tags' />}>
           Tags
-        </MenuItem>
-        {/* <MenuItem href='/blogs' icon={<i className='tabler-smart-home' />}>
+        </MenuItem> */}
+        <MenuItem href='/blogs' icon={<i className='tabler-brand-blogger' />}>
           Blogs
         </MenuItem>
-        <MenuItem href='/about' icon={<i className='tabler-info-circle' />}>
+        {/* <MenuItem href='/about' icon={<i className='tabler-info-circle' />}>
           About
         </MenuItem> */}
       </Menu>

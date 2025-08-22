@@ -23,7 +23,7 @@ import TablePaginationComponent from '@components/TablePaginationComponent'
 import CustomTextField from '@core/components/mui/TextField'
 import ChevronRight from '@menu/svg/ChevronRight'
 import styles from '@core/styles/table.module.css'
-import { Button } from '@mui/material'
+import { Button, Pagination, Typography } from '@mui/material'
 
 // ---- Debounced Input ----
 const DebouncedInput = ({ value: initialValue, onChange, debounce = 500, ...props }) => {
@@ -51,55 +51,118 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
 }
 
 // ---- Main Table Component ----
-const KitchenSink = ({ data = [], columns = [], title = 'Data Table', btnText, btnFunc }) => {
+const KitchenSink = ({ data = [], columns = [], title = 'Data Table', btnText, btnFunc, totalDataCount, pagination, setPagination, onPageChange }) => {
   const [columnFilters, setColumnFilters] = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
+  const [sort, setSort] = useState(true)
+  const [sortColumn, setSortColumn] = useState('genre_name');
 
   // --- Checkbox Column ---
   const selectionColumn = {
     id: 'select',
     header: ({ table }) => (
-     <Checkbox
-      checked={table.getIsAllRowsSelected()}
-      indeterminate={table.getIsSomeRowsSelected()}
-      onChange={table.getToggleAllRowsSelectedHandler()}
-      size="small"
-    />
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        indeterminate={table.getIsSomeRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+        size="small"
+      />
     ),
     cell: ({ row }) => (
-        <Checkbox
-      checked={row.getIsSelected()}
-      disabled={!row.getCanSelect()}
-      indeterminate={row.getIsSomeSelected()}
-      onChange={row.getToggleSelectedHandler()}
-      size="small"
-    />
+      <Checkbox
+        checked={row.getIsSelected()}
+        disabled={!row.getCanSelect()}
+        indeterminate={row.getIsSomeSelected()}
+        onChange={row.getToggleSelectedHandler()}
+        size="small"
+      />
     )
   }
 
   const memoizedColumns = useMemo(() => [selectionColumn, ...columns], [columns])
 
+  // const table = useReactTable({
+  //   data: useMemo(() => data, [data]),
+  //   columns: memoizedColumns,
+  //   filterFns: { fuzzy: fuzzyFilter },
+  //   state: { columnFilters, globalFilter, rowSelection },
+  //   onColumnFiltersChange: setColumnFilters,
+  //   onGlobalFilterChange: setGlobalFilter,
+  //   onRowSelectionChange: setRowSelection,
+  //   enableRowSelection: true, // enable selection
+  //   getCoreRowModel: getCoreRowModel(),
+  //   getFilteredRowModel: getFilteredRowModel(),
+  //   getSortedRowModel: getSortedRowModel(),
+  //   getPaginationRowModel: getPaginationRowModel(),
+  //   getFacetedRowModel: getFacetedRowModel(),
+  //   getFacetedUniqueValues: getFacetedUniqueValues(),
+  //   getFacetedMinMaxValues: getFacetedMinMaxValues()
+  // })
+  const sortedData = useMemo(() => {
+    return sort
+      ? [...data].sort((a, b) => {
+        const valA = a[sortColumn];
+        const valB = b[sortColumn];
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return valA.localeCompare(valB);
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return valA - valB;
+        }
+
+        if (valA instanceof Date && valB instanceof Date) {
+          return valA - valB;
+        }
+
+        return 0;
+      })
+      : [...data].sort((a, b) => {
+        const valA = a[sortColumn];
+        const valB = b[sortColumn];
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return b[sortColumn].localeCompare(a[sortColumn]);
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return valB - valA;
+        }
+
+        if (valA instanceof Date && valB instanceof Date) {
+          return valB - valA;
+        }
+
+        return 0;
+      });
+  }, [data, sort, sortColumn]);
   const table = useReactTable({
-    data: useMemo(() => data, [data]),
-    columns: memoizedColumns,
-    filterFns: { fuzzy: fuzzyFilter },
-    state: { columnFilters, globalFilter, rowSelection },
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onRowSelectionChange: setRowSelection,
-    enableRowSelection: true, // enable selection
+    data: sortedData, // Use the raw data from props, not sortedData
+    columns,
+    state: {
+      pagination,
+      globalFilter,
+    },
+    manualPagination: true, // Enable server-side pagination
+    pageCount: Math.ceil(totalDataCount / pagination.pageSize), // Total pages from server
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getFacetedMinMaxValues: getFacetedMinMaxValues()
-  })
+    getSortedRowModel: getSortedRowModel(), // Enable client-side sorting
+    onPaginationChange: setPagination,
+    onGlobalFilterChange: setGlobalFilter,
+  });
 
   // Access selected rows
   const selectedRows = table.getSelectedRowModel().rows.map(r => r.original)
+
+
+  useEffect(() => {
+    console.log(data, "data")
+    // console.log(pagination, "pagination")
+    onPageChange(pagination);
+  }, [pagination])
 
   return (
     <Card className='overflow-visible'>
@@ -177,14 +240,33 @@ const KitchenSink = ({ data = [], columns = [], title = 'Data Table', btnText, b
         </table>
       </div>
 
-      <TablePaginationComponent table={table} />
+      {/* <TablePaginationComponent table={table} /> */}
 
-      {/* Example: show selected rows */}
-      {/* {selectedRows.length > 0 && (
-        <div className="p-3 text-sm text-gray-600">
-          Selected Rows: {selectedRows.length}
-        </div>
-      )} */}
+
+      <div className='flex justify-between items-center flex-wrap pli-6 border-bs bs-auto plb-[12.5px] gap-2'>
+        <Typography color='text.disabled'>
+          {`Showing ${totalDataCount === 0
+            ? 0
+            : (pagination?.pageIndex ?? 0) * (pagination?.pageSize ?? 10) + 1
+            }
+    to ${Math.min(
+              ((pagination?.pageIndex ?? 0) + 1) * (pagination?.pageSize ?? 10),
+              totalDataCount ?? 0
+            )} of ${totalDataCount ?? 0} entries`}
+        </Typography>
+
+        <Pagination
+          shape='rounded'
+          color='primary'
+          variant='tonal'
+          count={Math.ceil((totalDataCount ?? 0) / (pagination?.pageSize ?? 10))}
+          page={(pagination?.pageIndex ?? 0) + 1}
+          onChange={(_, page) => table.setPageIndex(page - 1)}
+          showFirstButton
+          showLastButton
+        />
+      </div>
+
     </Card>
   )
 }
