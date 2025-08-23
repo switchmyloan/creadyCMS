@@ -9,7 +9,7 @@ const ValidatedSearchableSelectField = ({ name, control, rules, label, options, 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOption, setSelectedOption] = useState(null);
     // const { mode } = useCountry();
-    const mode = 'dark'; // Placeholder for mode, replace with actual context or prop if needed
+    const mode = 'light'; // Placeholder for mode, replace with actual context or prop if needed
     const handleSearchChange = (newValue) => {
         setSearchQuery(newValue);
         setGlobalFilter(newValue);

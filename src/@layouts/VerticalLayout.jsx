@@ -21,6 +21,7 @@ const VerticalLayout = props => {
         className={classnames(verticalLayoutClasses.contentWrapper, 'flex flex-col min-is-0 is-full')}
       >
         {navbar || null}
+        {/* Deepak Top Navbar */}
         {/* Content */}
         <LayoutContent>{children}</LayoutContent>
         {footer || null}

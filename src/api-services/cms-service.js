@@ -11,3 +11,6 @@ export const DeleteTag = async id => Api().delete(`/tag/${id}`)
 export const getBlogs = async (pageNo, limit, globalFilter) => {
   return Api().get(`/blog?currentPage=${pageNo}&perPage=${limit}&search=${globalFilter}`)
 }
+
+// Author
+export const AddAuthor = async payload => Api().post(`/author`, payload)
